@@ -31,44 +31,46 @@ $userEmail = $_SESSION['user_email'] ?? '';
     <title>Checkout | Luzano Spear Master</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Montserrat', Arial, sans-serif; background: #f4f6f8; color: #111; }
-        .checkout-header { background: #05090c; height: 92px; display: flex; align-items: center; justify-content: space-between; padding: 0 6%; }
+        body { font-family: 'Montserrat', Arial, sans-serif; background: #05090c; color: #fff; }
+        .checkout-header { background: rgba(0, 0, 0, 0.18); backdrop-filter: blur(5px); height: 92px; display: flex; align-items: center; justify-content: space-between; padding: 0 6%; border-bottom: 1px solid rgba(56, 130, 255, 0.5); }
         .checkout-logo img { width: 130px; display: block; }
-        .back-link { color: #fff; text-decoration: none; font-size: 13px; letter-spacing: 1px; font-weight: bold; }
+        .back-link { color: #fff; text-decoration: none; font-size: 13px; letter-spacing: 1px; font-weight: bold; transition: color 0.2s ease; }
         .back-link:hover { color: #3c82ff; }
         .checkout-container { max-width: 1180px; margin: 50px auto; padding: 0 25px; }
         .checkout-title { text-align: center; margin-bottom: 45px; }
         .checkout-title h1 { font-size: 36px; letter-spacing: 2px; margin-bottom: 10px; }
-        .checkout-title p { color: #666; font-size: 14px; }
+        .checkout-title p { color: #9db2c2; font-size: 14px; }
         .checkout-layout { display: grid; grid-template-columns: 1.5fr 1fr; gap: 35px; align-items: start; }
-        .checkout-form { background: #fff; padding: 35px; border: 1px solid #ddd; }
-        .section-title { font-size: 20px; letter-spacing: 1px; margin-bottom: 25px; }
+        .checkout-form { background: #0b1217; padding: 35px; border: 1px solid rgba(56, 130, 255, 0.15); border-radius: 6px; }
+        .section-title { font-size: 20px; letter-spacing: 1px; margin-bottom: 25px; color: #fff; }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
         .form-group { margin-bottom: 20px; }
         .form-group.full { width: 100%; }
-        label { display: block; font-size: 12px; font-weight: bold; letter-spacing: 1px; margin-bottom: 8px; text-transform: uppercase; }
-        input, textarea, select { width: 100%; padding: 14px; border: 1px solid #ccc; background: #fff; font-family: inherit; font-size: 14px; outline: none; }
+        label { display: block; font-size: 12px; font-weight: bold; letter-spacing: 1px; margin-bottom: 8px; text-transform: uppercase; color: #9db2c2; }
+        input, textarea, select { width: 100%; padding: 14px; border: 1px solid rgba(56, 130, 255, 0.25); border-radius: 4px; background: #05090c; color: #fff; font-family: inherit; font-size: 14px; outline: none; transition: border-color 0.2s ease; }
+        input::placeholder, textarea::placeholder { color: #5a6b76; }
         input:focus, textarea:focus, select:focus { border-color: #3c82ff; }
         textarea { height: 100px; resize: vertical; }
         .payment-box { margin-top: 10px; }
-        .payment-option { border: 1px solid #ccc; padding: 16px; display: flex; align-items: center; gap: 12px; cursor: pointer; }
+        .payment-option { border: 1px solid rgba(56, 130, 255, 0.25); border-radius: 4px; padding: 16px; display: flex; align-items: center; gap: 12px; cursor: pointer; background: #05090c; }
         .payment-option input { width: auto; }
-        .payment-option span { font-size: 14px; }
-        .order-summary { background: #05090c; color: #fff; padding: 30px; position: sticky; top: 25px; }
+        .payment-option span { font-size: 14px; color: #fff; }
+        .order-summary { background: #0b1217; color: #fff; padding: 30px; border: 1px solid rgba(56, 130, 255, 0.2); border-radius: 6px; position: sticky; top: 25px; }
         .order-summary h2 { font-size: 20px; letter-spacing: 1px; margin-bottom: 25px; }
-        .order-item { display: grid; grid-template-columns: 65px 1fr auto; gap: 15px; align-items: center; padding: 15px 0; border-bottom: 1px solid #223; }
-        .order-item-image { width: 65px; height: 75px; background: #fff; overflow: hidden; }
+        .order-item { display: grid; grid-template-columns: 65px 1fr auto; gap: 15px; align-items: center; padding: 15px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
+        .order-item-image { width: 65px; height: 75px; background: #05090c; border-radius: 4px; overflow: hidden; }
         .order-item-image img { width: 100%; height: 100%; object-fit: cover; display: block; }
-        .order-item-name { font-size: 13px; font-weight: bold; margin-bottom: 6px; }
-        .order-item-quantity { font-size: 12px; color: #aaa; }
-        .order-item-price { font-size: 13px; white-space: nowrap; }
-        .summary-row { display: flex; justify-content: space-between; padding: 12px 0; font-size: 14px; }
-        .summary-row.shipping { border-bottom: 1px solid #223; }
-        .summary-row.total { font-size: 19px; font-weight: bold; padding-top: 20px; }
+        .order-item-name { font-size: 13px; font-weight: bold; margin-bottom: 6px; color: #fff; }
+        .order-item-quantity { font-size: 12px; color: #9db2c2; }
+        .order-item-price { font-size: 13px; white-space: nowrap; color: #dfe9ff; }
+        .summary-row { display: flex; justify-content: space-between; padding: 12px 0; font-size: 14px; color: #b7c6d1; }
+        .summary-row.shipping { border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
+        .summary-row.shipping span:last-child { color: #3cd68c; font-weight: 700; }
+        .summary-row.total { font-size: 19px; font-weight: bold; padding-top: 20px; color: #fff; }
         .summary-row.total span:last-child { color: #3c82ff; }
-        .place-order-button { width: 100%; border: none; background: #3c82ff; color: #fff; padding: 17px; margin-top: 25px; font-weight: bold; letter-spacing: 1px; cursor: pointer; font-size: 13px; }
-        .place-order-button:hover { background: #1e5ef0; }
-        .secure-note { text-align: center; color: #aaa; font-size: 11px; margin-top: 15px; }
+        .place-order-button { width: 100%; border: none; border-radius: 4px; background: #3c82ff; color: #fff; padding: 17px; margin-top: 25px; font-weight: bold; letter-spacing: 1px; cursor: pointer; font-size: 13px; transition: background 0.2s ease, transform 0.2s ease; }
+        .place-order-button:hover { background: #1e5ef0; transform: translateY(-2px); }
+        .secure-note { text-align: center; color: #7c93a1; font-size: 11px; margin-top: 15px; }
         @media (max-width: 800px) {
             .checkout-header { padding: 0 20px; }
             .checkout-logo img { width: 110px; }

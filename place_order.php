@@ -2,6 +2,109 @@
 session_start();
 require_once __DIR__ . '/config.php';
 
+/**
+ * Render a branded error page (instead of a raw die() dump) and stop execution.
+ * Matches the dark navy / blue theme used across the rest of the site.
+ */
+function renderOrderError(string $message): void
+{
+    ?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Issue - Luzano Spear Master</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .order-error-page {
+            min-height: 70vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 20px;
+        }
+        .order-error-card {
+            max-width: 480px;
+            width: 100%;
+            background: #0b1217;
+            border: 1px solid rgba(238, 107, 77, 0.4);
+            border-radius: 10px;
+            padding: 40px 35px;
+            text-align: center;
+        }
+        .order-error-icon {
+            width: 56px;
+            height: 56px;
+            margin: 0 auto 20px;
+            border-radius: 50%;
+            background: rgba(238, 107, 77, 0.12);
+            border: 1px solid rgba(238, 107, 77, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            color: #ffb4a2;
+        }
+        .order-error-card h1 {
+            font-size: 20px;
+            letter-spacing: 1px;
+            margin-bottom: 14px;
+        }
+        .order-error-card p.order-error-message {
+            color: #ffb4a2;
+            background: rgba(238, 107, 77, 0.1);
+            border: 1px solid rgba(238, 107, 77, 0.3);
+            border-radius: 6px;
+            padding: 12px 16px;
+            font-size: 13px;
+            line-height: 1.6;
+            margin-bottom: 28px;
+        }
+        .order-error-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .order-error-actions a {
+            text-decoration: none;
+        }
+        .order-error-secondary {
+            color: #9db2c2;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            padding: 13px 22px;
+            border: 1px solid rgba(56, 130, 255, 0.4);
+            border-radius: 4px;
+            transition: background 0.2s ease, border-color 0.2s ease;
+        }
+        .order-error-secondary:hover {
+            background: rgba(56, 130, 255, 0.12);
+            border-color: #3c82ff;
+        }
+    </style>
+</head>
+<body>
+    <div class="order-error-page">
+        <div class="order-error-card">
+            <div class="order-error-icon">&#33;</div>
+            <h1>WE COULDN'T PLACE YOUR ORDER</h1>
+            <p class="order-error-message"><?php echo htmlspecialchars($message, ENT_QUOTES, 'UTF-8'); ?></p>
+            <div class="order-error-actions">
+                <a href="cart.php" class="red-btn">BACK TO CART</a>
+                <a href="checkout.php" class="order-error-secondary">TRY CHECKOUT AGAIN</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+    <?php
+    exit();
+}
+
 if (
     !isset($_SESSION['logged_in']) ||
     $_SESSION['logged_in'] !== true ||
@@ -31,7 +134,7 @@ if (
     $customerName === '' || $email === '' || $phone === '' ||
     $address === '' || $city === '' || $postalCode === ''
 ) {
-    die("Please complete all required fields.");
+    renderOrderError("Please complete all required fields.");
 }
 
 $conn->begin_transaction();
@@ -155,6 +258,6 @@ try {
     exit();
 } catch (Exception $e) {
     $conn->rollback();
-    die("Order failed: " . htmlspecialchars($e->getMessage(), ENT_QUOTES, 'UTF-8'));
+    renderOrderError($e->getMessage());
 }
 ?>

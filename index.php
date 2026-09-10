@@ -5,6 +5,28 @@ require_once __DIR__ . '/config.php';
 $pageTitle = "Luzano Spear Master";
 $products = $conn->query("SELECT * FROM products WHERE active = 1 ORDER BY id ASC")->fetch_all(MYSQLI_ASSOC);
 
+$publicRatings = $conn->query("
+    SELECT oi.product_name, oi.rating, oi.review, oi.rated_at,
+        o.customer_name,
+        u.email AS customer_email,
+        u.profile_picture AS customer_avatar
+    FROM order_items oi
+    JOIN orders o ON o.id = oi.order_id
+    LEFT JOIN users u ON u.id = o.user_id
+    WHERE oi.rating IS NOT NULL
+    ORDER BY oi.rated_at DESC
+    LIMIT 10
+")->fetch_all(MYSQLI_ASSOC);
+
+function customerInitials(string $name): string
+{
+    $parts = preg_split('/\s+/', trim($name));
+    if (count($parts) === 1) {
+        return strtoupper(substr($parts[0], 0, 2));
+    }
+    return strtoupper(substr($parts[0], 0, 1) . substr($parts[count($parts) - 1], 0, 1));
+}
+
 $cart = $_SESSION['cart'] ?? [];
 $cartCount = 0;
 foreach ($cart as $item) {
@@ -19,6 +41,63 @@ foreach ($cart as $item) {
     <title><?php echo $pageTitle; ?></title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .ratings-section .section-title { margin-bottom: 30px; }
+        .ratings-table-wrap {
+            max-width: 1100px;
+            margin: 0 auto;
+            overflow-x: auto;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+        }
+        .ratings-table { width: 100%; border-collapse: collapse; }
+        .ratings-table thead th {
+            text-align: left;
+            font-size: 11px;
+            letter-spacing: 0.6px;
+            color: rgba(255, 255, 255, 0.45);
+            text-transform: uppercase;
+            padding: 14px 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .ratings-table tbody td {
+            padding: 14px 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            font-size: 13px;
+            color: #fff;
+            vertical-align: middle;
+        }
+        .ratings-table tbody tr:last-child td { border-bottom: none; }
+        .rating-customer-cell { display: flex; align-items: center; gap: 10px; }
+        .rating-avatar {
+            width: 32px;
+            height: 32px;
+            min-width: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3c82ff, #7c5cff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 800;
+            color: #fff;
+            overflow: hidden;
+        }
+        .rating-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .rating-customer-name { font-weight: 700; display: block; }
+        .rating-customer-email { display: block; font-size: 11px; color: rgba(255, 255, 255, 0.45); }
+        .rating-stars-cell .star-filled { color: #f5a623; }
+        .rating-stars-cell .star-empty { color: rgba(255, 255, 255, 0.2); }
+        .no-ratings-row td { text-align: center; color: rgba(255, 255, 255, 0.4); padding: 24px; }
+        .product-card img {
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+            border-radius: 6px;
+        }
+        .product-card img:hover {
+            transform: scale(1.08);
+            box-shadow: 0 0 24px rgba(30, 30, 255, 0.65);
+        }
+    </style>
 </head>
 <body>
 
@@ -33,15 +112,18 @@ foreach ($cart as $item) {
         <a href="#gallery" class="nav-link">GALLERY</a>
         <a href="#contact" class="nav-link">CONTACT</a>
     </nav>
-    <a href="cart.php" class="cart-icon-link" id="cart-icon-link" aria-label="View cart">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="9" cy="21" r="1"></circle>
-            <circle cx="20" cy="21" r="1"></circle>
-            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-        </svg>
-        <span class="cart-count-badge" id="cart-count-badge" <?= $cartCount > 0 ? '' : 'style="display:none;"' ?>><?= $cartCount ?></span>
-    </a>
-    <a href="logout.php" class="logout-link">LOG OUT</a>
+    <div class="nav-actions">
+        <a href="cart.php" class="cart-icon-link" id="cart-icon-link" aria-label="View cart">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="9" cy="21" r="1"></circle>
+                <circle cx="20" cy="21" r="1"></circle>
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+            </svg>
+            <span class="cart-count-badge" id="cart-count-badge" <?= $cartCount > 0 ? '' : 'style="display:none;"' ?>><?= $cartCount ?></span>
+        </a>
+        <a href="user_page.php" class="account-link">MY ACCOUNT</a>
+        <a href="logout.php" class="logout-link">LOG OUT</a>
+    </div>
 </header>
 
 <?php include 'partials/cart_modal.php'; ?>
@@ -83,6 +165,63 @@ foreach ($cart as $item) {
                 </div>
             </div>
         <?php endforeach; ?>
+    </div>
+</section>
+
+<section id="ratings" class="section ratings-section">
+    <div class="section-title">
+        <h2>CUSTOMER RATINGS</h2>
+        <p>What divers are saying about their<br>Luzano Spear Master gear.</p>
+    </div>
+
+    <div class="ratings-table-wrap">
+        <table class="ratings-table">
+            <thead>
+                <tr>
+                    <th>Customer</th>
+                    <th>Product</th>
+                    <th>Rating</th>
+                    <th>Review</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+            <?php foreach ($publicRatings as $r): ?>
+                <tr>
+                    <td>
+                        <div class="rating-customer-cell">
+                            <div class="rating-avatar">
+                                <?php if (!empty($r['customer_avatar'])): ?>
+                                    <img src="uploads/avatars/<?php echo htmlspecialchars($r['customer_avatar'], ENT_QUOTES, 'UTF-8'); ?>" alt="">
+                                <?php else: ?>
+                                    <?php echo htmlspecialchars(customerInitials($r['customer_name']), ENT_QUOTES, 'UTF-8'); ?>
+                                <?php endif; ?>
+                            </div>
+                            <div>
+                                <span class="rating-customer-name"><?php echo htmlspecialchars($r['customer_name'], ENT_QUOTES, 'UTF-8'); ?></span>
+                                <?php if (!empty($r['customer_email'])): ?>
+                                    <span class="rating-customer-email"><?php echo htmlspecialchars($r['customer_email'], ENT_QUOTES, 'UTF-8'); ?></span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </td>
+                    <td><?php echo htmlspecialchars($r['product_name'], ENT_QUOTES, 'UTF-8'); ?></td>
+                    <td class="rating-stars-cell">
+                        <span aria-label="<?php echo (int) $r['rating']; ?> out of 5 stars">
+                            <?php for ($i = 1; $i <= 5; $i++): ?>
+                                <span class="<?php echo $i <= (int) $r['rating'] ? 'star-filled' : 'star-empty'; ?>">★</span>
+                            <?php endfor; ?>
+                        </span>
+                    </td>
+                    <td><?php echo !empty($r['review']) ? nl2br(htmlspecialchars($r['review'], ENT_QUOTES, 'UTF-8')) : '<span style="color:rgba(255,255,255,0.4);">No comment</span>'; ?></td>
+                    <td><?php echo date('M j, Y', strtotime($r['rated_at'])); ?></td>
+                </tr>
+            <?php endforeach; ?>
+            <?php if (empty($publicRatings)): ?>
+                <tr class="no-ratings-row"><td colspan="5">No ratings yet.</td></tr>
+            <?php endif; ?>
+            </tbody>
+        </table>
     </div>
 </section>
 

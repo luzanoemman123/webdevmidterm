@@ -3,11 +3,31 @@ require_once __DIR__ . '/partials/admin_guard.php';
 require_once __DIR__ . '/config.php';
 
 $validStatuses = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
+$statusRank = ['Pending' => 0, 'Processing' => 1, 'Shipped' => 2, 'Delivered' => 3, 'Cancelled' => 4];
+$terminalStatuses = ['Delivered', 'Cancelled'];
+$statusColors = [
+    'Pending' => '#ffb14c',
+    'Processing' => '#3c82ff',
+    'Shipped' => '#7c5cff',
+    'Delivered' => '#3cd68c',
+    'Cancelled' => '#ee6b4d',
+];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'update_status') {
     $orderId = (int) ($_POST['order_id'] ?? 0);
     $status = $_POST['status'] ?? '';
-    if (in_array($status, $validStatuses, true)) {
+
+    $currentStmt = $conn->prepare("SELECT status FROM orders WHERE id = ?");
+    $currentStmt->bind_param("i", $orderId);
+    $currentStmt->execute();
+    $currentStatus = $currentStmt->get_result()->fetch_assoc()['status'] ?? null;
+    $currentStmt->close();
+
+    $isValidTarget = in_array($status, $validStatuses, true);
+    $isCurrentLocked = $currentStatus !== null && in_array($currentStatus, $terminalStatuses, true);
+    $isForwardMove = $currentStatus !== null && ($statusRank[$status] ?? -1) > ($statusRank[$currentStatus] ?? -1);
+
+    if ($isValidTarget && !$isCurrentLocked && $isForwardMove) {
         $stmt = $conn->prepare("UPDATE orders SET status = ? WHERE id = ?");
         $stmt->bind_param("si", $status, $orderId);
         $stmt->execute();
@@ -60,14 +80,30 @@ unset($order);
                             </td>
                             <td>₱<?= number_format($order['total_amount'], 2) ?></td>
                             <td>
-                                <form method="post" style="display:flex; gap:6px; align-items:center;">
+                                <form method="post" class="status-form">
                                     <input type="hidden" name="action" value="update_status">
                                     <input type="hidden" name="order_id" value="<?= (int) $order['id'] ?>">
-                                    <select name="status" onchange="this.form.submit()">
+                                    <div class="status-buttons">
+                                        <?php
+                                        $currentRank = $statusRank[$order['status']] ?? 0;
+                                        $isLocked = in_array($order['status'], $terminalStatuses, true);
+                                        ?>
                                         <?php foreach ($validStatuses as $status): ?>
-                                            <option value="<?= $status ?>" <?= $order['status'] === $status ? 'selected' : '' ?>><?= $status ?></option>
+                                            <?php
+                                            $isCurrent = $status === $order['status'];
+                                            $isPast = $statusRank[$status] < $currentRank;
+                                            $isDisabled = $isCurrent || $isPast || $isLocked;
+                                            ?>
+                                            <button
+                                                type="submit"
+                                                name="status"
+                                                value="<?= $status ?>"
+                                                class="status-btn <?= $isCurrent ? 'active' : '' ?>"
+                                                style="--accent: <?= $statusColors[$status] ?>;"
+                                                <?= $isDisabled ? 'disabled' : '' ?>
+                                            ><?= $status ?></button>
                                         <?php endforeach; ?>
-                                    </select>
+                                    </div>
                                 </form>
                             </td>
                             <td><?= date('M j, Y g:ia', strtotime($order['created_at'])) ?></td>

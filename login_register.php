@@ -56,6 +56,13 @@ if (isset($_POST['login'])) {
     if ($result && $result->num_rows > 0) {
         $user = $result->fetch_assoc();
         if (password_verify($rawPassword, $user['password'])) {
+            if ((int) $user['is_blocked'] === 1) {
+                $stmt->close();
+                $_SESSION['login_error'] = "This account has been blocked. Please contact the administrator.";
+                $_SESSION['active_form'] = 'login';
+                header("Location: login.php");
+                exit();
+            }
             $stmt->close();
             session_regenerate_id(true);
             $_SESSION['logged_in'] = true;

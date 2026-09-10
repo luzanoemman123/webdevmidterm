@@ -85,6 +85,26 @@ $imageFiles = array_values(array_filter(
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stock | Luzano Admin</title>
     <link rel="stylesheet" href="admin.css">
+    <style>
+        td.actions {
+            vertical-align: middle;
+        }
+        .action-buttons {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .action-buttons form {
+            display: contents;
+        }
+        .action-buttons .delete-button {
+            background: none;
+            border: none;
+            padding: 0;
+            font: inherit;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
     <?php include 'partials/admin_nav.php'; ?>
@@ -106,12 +126,14 @@ $imageFiles = array_values(array_filter(
                                 <td><?= (int) $product['stock'] ?><?= (int) $product['stock'] <= 5 ? ' ⚠' : '' ?></td>
                                 <td><span class="status <?= $product['active'] ? 'live' : 'hidden' ?>"><?= $product['active'] ? 'Live' : 'Hidden' ?></span></td>
                                 <td class="actions">
-                                    <a href="admin_stock.php?edit=<?= (int) $product['id'] ?>">Edit</a>
-                                    <form method="post" onsubmit="return confirm('Remove this product?');">
-                                        <input type="hidden" name="action" value="delete_product">
-                                        <input type="hidden" name="id" value="<?= (int) $product['id'] ?>">
-                                        <button type="submit" class="delete-button">Delete</button>
-                                    </form>
+                                    <div class="action-buttons">
+                                        <a href="admin_stock.php?edit=<?= (int) $product['id'] ?>">Edit</a>
+                                        <form method="post" onsubmit="return confirm('Remove this product?');">
+                                            <input type="hidden" name="action" value="delete_product">
+                                            <input type="hidden" name="id" value="<?= (int) $product['id'] ?>">
+                                            <button type="submit" class="delete-button">Delete</button>
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
